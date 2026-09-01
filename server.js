@@ -49,8 +49,7 @@ function codeExists(code) {
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
-
+app.use(express.static(__dirname));
 // Create a brand-new chat session/code
 app.post('/api/session/new', (req, res) => {
   let code;

@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Support Chat</title>
+<style>
+  :root{
+    --bg:#12141a;
+    --panel:#1b1e27;
+    --panel-2:#232733;
+    --border:#2c3040;
+    --text:#e8e9ee;
+    --muted:#8b8fa3;
+    --accent:#4f7cff;
+    --accent-2:#38d39f;
+    --bubble-user:#4f7cff;
+    --bubble-admin:#2a2e3b;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:radial-gradient(1200px 600px at 50% -10%, #1a1e2b, var(--bg));
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color:var(--text);
+  }
+
+  .card{
+    width:min(420px, 94vw);
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:16px;
+    overflow:hidden;
+    box-shadow:0 20px 60px rgba(0,0,0,.4);
+  }
+
+  .gate{
+    padding:32px 28px;
+  }
+  .gate h1{
+    font-size:19px;
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+  }
+  .gate p{
+    color:var(--muted);
+    font-size:13.5px;
+    margin:0 0 22px;
+    line-height:1.5;
+  }
+  .gate input{
+    width:100%;
+    padding:12px 14px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:var(--panel-2);
+    color:var(--text);
+    font-size:15px;
+    outline:none;
+    margin-bottom:12px;
+  }
+  .gate input:focus{border-color:var(--accent);}
+  .btn{
+    width:100%;
+    padding:12px 14px;
+    border-radius:10px;
+    border:none;
+    font-size:14.5px;
+    font-weight:600;
+    cursor:pointer;
+    transition:opacity .15s ease;
+  }
+  .btn:hover{opacity:.9;}
+  .btn-primary{background:var(--accent); color:white;}
+  .btn-ghost{
+    background:transparent;
+    color:var(--muted);
+    border:1px solid var(--border);
+    margin-top:10px;
+  }
+  .gate-error{
+    color:#ff6b6b;
+    font-size:12.5px;
+    min-height:16px;
+    margin:-4px 0 10px;
+  }
+  .divider{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    color:var(--muted);
+    font-size:12px;
+    margin:18px 0;
+  }
+  .divider::before,.divider::after{
+    content:"";
+    flex:1;
+    height:1px;
+    background:var(--border);
+  }
+
+  .chat{display:none; flex-direction:column; height:min(600px, 88vh);}
+  .chat.active{display:flex;}
+  .chat-header{
+    padding:16px 18px;
+    border-bottom:1px solid var(--border);
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    background:var(--panel-2);
+  }
+  .chat-header .who{display:flex; align-items:center; gap:10px;}
+  .dot{width:8px; height:8px; border-radius:50%; background:var(--accent-2);}
+  .chat-header .title{font-size:14.5px; font-weight:600;}
+  .chat-header .code{font-size:11.5px; color:var(--muted);}
+  .icon-btn{
+    background:none; border:none; color:var(--muted);
+    cursor:pointer; font-size:12.5px;
+  }
+  .icon-btn:hover{color:var(--text);}
+
+  .messages{
+    flex:1;
+    overflow-y:auto;
+    padding:18px;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .msg{
+    max-width:78%;
+    padding:10px 13px;
+    border-radius:14px;
+    font-size:14px;
+    line-height:1.45;
+    word-wrap:break-word;
+  }
+  .msg.user{
+    align-self:flex-end;
+    background:var(--bubble-user);
+    color:white;
+    border-bottom-right-radius:4px;
+  }
+  .msg.admin{
+    align-self:flex-start;
+    background:var(--bubble-admin);
+    color:var(--text);
+    border-bottom-left-radius:4px;
+  }
+  .msg-empty{
+    margin:auto;
+    color:var(--muted);
+    font-size:13px;
+    text-align:center;
+  }
+
+  .composer{
+    display:flex;
+    gap:8px;
+    padding:14px;
+    border-top:1px solid var(--border);
+    background:var(--panel-2);
+  }
+  .composer input{
+    flex:1;
+    padding:11px 14px;
+    border-radius:10px;
+    border:1px solid var(--border);
+    background:var(--panel);
+    color:var(--text);
+    font-size:14px;
+    outline:none;
+  }
+  .composer input:focus{border-color:var(--accent);}
+  .send-btn{
+    padding:0 16px;
+    border-radius:10px;
+    border:none;
+    background:var(--accent);
+    color:white;
+    font-weight:600;
+    cursor:pointer;
+    font-size:14px;
+  }
+  .send-btn:disabled{opacity:.5; cursor:default;}
+</style>
+</head>
+<body>
+
+<div class="card">
+
+  <div class="gate" id="gate">
+    <h1>Chat shuru karo</h1>
+    <p>Agar pehle se code hai to daal ke apni purani chat wapas paao, warna naya chat shuru karo.</p>
+    <div class="gate-error" id="gateError"></div>
+    <input id="codeInput" placeholder="Code daalo, jaise SP$12127" autocomplete="off" />
+    <button class="btn btn-primary" id="resumeBtn">Chat kholo</button>
+    <div class="divider">ya</div>
+    <button class="btn btn-ghost" id="newBtn">Naya chat shuru karo</button>
+  </div>
+
+  <div class="chat" id="chat">
+    <div class="chat-header">
+      <div class="who">
+        <div class="dot"></div>
+        <div>
+          <div class="title">Support</div>
+          <div class="code" id="codeDisplay"></div>
+        </div>
+      </div>
+      <button class="icon-btn" id="logoutBtn">Change code</button>
+    </div>
+    <div class="messages" id="messages">
+      <div class="msg-empty">Apna message likho, hum jald reply karenge.</div>
+    </div>
+    <div class="composer">
+      <input id="msgInput" placeholder="Message likho..." autocomplete="off" />
+      <button class="send-btn" id="sendBtn">Bhejo</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const API_BASE = ""; // yaha apna Railway backend URL daalna hai deploy karne ke baad
+
+const gateEl = document.getElementById('gate');
+const chatEl = document.getElementById('chat');
+const codeInput = document.getElementById('codeInput');
+const gateError = document.getElementById('gateError');
+const codeDisplay = document.getElementById('codeDisplay');
+const messagesEl = document.getElementById('messages');
+const msgInput = document.getElementById('msgInput');
+
+let currentCode = localStorage.getItem('chat_code') || null;
+let pollTimer = null;
+let lastCount = 0;
+
+async function api(path, opts) {
+  const res = await fetch(API_BASE + path, opts);
+  if (!res.ok) throw new Error('request failed');
+  return res.json();
+}
+
+function showChat(code) {
+  currentCode = code;
+  localStorage.setItem('chat_code', code);
+  codeDisplay.textContent = code;
+  gateEl.style.display = 'none';
+  chatEl.classList.add('active');
+  loadMessages();
+  pollTimer = setInterval(loadMessages, 3000);
+}
+
+function showGate(errorMsg) {
+  clearInterval(pollTimer);
+  chatEl.classList.remove('active');
+  gateEl.style.display = 'block';
+  gateError.textContent = errorMsg || '';
+}
+
+async function loadMessages() {
+  try {
+    const data = await api(`/api/session/${encodeURIComponent(currentCode)}/messages`);
+    if (data.messages.length === lastCount) return;
+    lastCount = data.messages.length;
+    renderMessages(data.messages);
+  } catch (e) {}
+}
+
+function renderMessages(list) {
+  if (!list.length) {
+    messagesEl.innerHTML = '<div class="msg-empty">Apna message likho, hum jald reply karenge.</div>';
+    return;
+  }
+  messagesEl.innerHTML = list.map(m =>
+    `<div class="msg ${m.sender === 'user' ? 'user' : 'admin'}">${escapeHtml(m.text)}</div>`
+  ).join('');
+  messagesEl.scrollTop = messagesEl.scrollHeight;
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+async function sendMessage() {
+  const text = msgInput.value.trim();
+  if (!text) return;
+  msgInput.value = '';
+  try {
+    await api(`/api/session/${encodeURIComponent(currentCode)}/message`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    loadMessages();
+  } catch (e) {
+    alert('Message bhejne mein error aaya. Dobara try karo.');
+  }
+}
+
+document.getElementById('resumeBtn').addEventListener('click', async () => {
+  const code = codeInput.value.trim();
+  if (!code) return (gateError.textContent = 'Pehle code daalo.');
+  try {
+    const data = await api(`/api/session/${encodeURIComponent(code)}/verify`);
+    if (!data.valid) return (gateError.textContent = 'Ye code sahi nahi hai.');
+    lastCount = 0;
+    showChat(code);
+  } catch (e) {
+    gateError.textContent = 'Kuch gadbad ho gayi, dobara try karo.';
+  }
+});
+
+document.getElementById('newBtn').addEventListener('click', async () => {
+  try {
+    const data = await api('/api/session/new', { method: 'POST' });
+    lastCount = 0;
+    showChat(data.code);
+  } catch (e) {
+    gateError.textContent = 'Naya chat shuru nahi ho paaya, dobara try karo.';
+  }
+});
+
+document.getElementById('logoutBtn').addEventListener('click', () => {
+  localStorage.removeItem('chat_code');
+  currentCode = null;
+  codeInput.value = '';
+  showGate();
+});
+
+document.getElementById('sendBtn').addEventListener('click', sendMessage);
+msgInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') sendMessage(); });
+
+(async function init() {
+  if (currentCode) {
+    try {
+      const data = await api(`/api/session/${encodeURIComponent(currentCode)}/verify`);
+      if (data.valid) return showChat(currentCode);
+    } catch (e) {}
+  }
+  showGate();
+})();
+</script>
+
+</body>
+</html>
